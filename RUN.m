@@ -2,28 +2,28 @@ function [  ] = RUN ( ~ )
 %RUN Summary of this function goes here
 %   Detailed explanation goes here
 
-%%
-% Fragestellung 1: Kovarianzmatrix
 %
-% disp('--------------------')
-% disp('Fragestellung 1 - Kovarianzmatrix')
-% disp(' ')
-% 
-% daten = load('daten.mat');
-% 
-% fieldNames = fieldnames(daten);
-% 
-% for i = 1 : numel(fieldNames)
-%     data = daten.(fieldNames{i});
-%     disp(fieldNames{i});
-%     disp(ourCov(data));
-%     x = data(1, :);
-%     y = data(2, :);
-%     
-%     figure('name', fieldNames{i});
-%     plot(x, y, '*');
-%     axis equal;
-% end
+%Fragestellung 1: Kovarianzmatrix
+
+disp('--------------------')
+disp('Fragestellung 1 - Kovarianzmatrix')
+disp(' ')
+
+daten = load('daten.mat');
+
+fieldNames = fieldnames(daten);
+
+for i = 1 : numel(fieldNames)
+    data = daten.(fieldNames{i});
+    disp(fieldNames{i});
+    disp(ourCov(data));
+    x = data(1, :);
+    y = data(2, :);
+    
+    figure('name', fieldNames{i});
+    plot(x, y, '*');
+    axis equal;
+end
 
 %%
 % Fragestellung 2: PCA
@@ -150,45 +150,45 @@ function [  ] = RUN ( ~ )
 % Der entfernte Eigenvektor bezieht sich auf die X-Koordinaten
 
 
-%%
-% Fragestellung 5a: Shape Modell
+% %%
+% % Fragestellung 5a: Shape Modell
+% % 
+% disp(' ');
+% disp('--------------------')
+% disp('Fragestellung 5a - Shape Modell');
+% disp(' ');
 % 
-disp(' ');
-disp('--------------------')
-disp('Fragestellung 5a - Shape Modell');
-disp(' ');
-
-daten = load('shapes.mat');
-aligned = daten.aligned;
-
-% Mean-Modell generieren
-meanModel = mean(aligned, 3);
-
-eigenValueRowVector = zeros(1, size(meanModel, 1));
-eigenVectorMatrix = zeros(size(meanModel));
-
-for i = 1 : size(aligned, 1)
-    % squeeze entfernt eine Dimension: wir interessieren uns für die
-    % x-/y-Werte der 14 Shapes -> 1 Reihe, 2 Spalten in 14 Dimensionen
-    % "nach hinten" -> squeeze macht 2D-Array draus
-    [ dataMean, eigenVectors, eigenValues ] = pca(squeeze(aligned(i, :, :)));
-    
-    eigenValueRowVector(i) = eigenValues;
-    eigenVectorMatrix(i, :) = eigenVectors';
-end
-
-%%
-% Fragestellung 5b
-%
-% berechne Standardabweichung für Shapes
-stdderivations = std(aligned, 0, 3);
-
-% plotte Shapes
-plotShape(aligned, meanModel, eigenVectorMatrix, stdderivations);
-
-disp('Rot = Mean-Model');
-disp('Blau = Shapes');
-disp('Grün = Standardabweichung der Modes bezogen auf Mean-Model');
+% daten = load('shapes.mat');
+% aligned = daten.aligned;
+% 
+% % Mean-Modell generieren
+% meanModel = mean(aligned, 3);
+% 
+% eigenValueRowVector = zeros(1, size(meanModel, 1));
+% eigenVectorMatrix = zeros(size(meanModel));
+% 
+% for i = 1 : size(aligned, 1)
+%     % squeeze entfernt eine Dimension: wir interessieren uns für die
+%     % x-/y-Werte der 14 Shapes -> 1 Reihe, 2 Spalten in 14 Dimensionen
+%     % "nach hinten" -> squeeze macht 2D-Array draus
+%     [ dataMean, eigenVectors, eigenValues ] = pca(squeeze(aligned(i, :, :)));
+%     
+%     eigenValueRowVector(i) = eigenValues;
+%     eigenVectorMatrix(i, :) = eigenVectors';
+% end
+% 
+% %%
+% % Fragestellung 5b
+% %
+% % berechne Standardabweichung für Shapes
+% stdderivations = std(aligned, 0, 3);
+% 
+% % plotte Shapes
+% plotShape(aligned, meanModel, eigenVectorMatrix, stdderivations);
+% 
+% disp('Rot = Mean-Model');
+% disp('Blau = Shapes');
+% disp('Grün = Standardabweichung der Modes bezogen auf Mean-Model');
 
 %%
 % Fragestellung 5c
