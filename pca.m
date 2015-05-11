@@ -19,6 +19,7 @@ C = ourCov(D);
 % eigenValueMatrix = Diagonal-Matrix mit Eigenwerten als Eintr‰gen
 [eigenVectors, eigenValueMatrix] = eig(C);
 
+
 % nur Werte der Eigenwerte-Matrix anzeigen, die nicht 0 sind und
 % anschlieﬂend transponieren, damit Reihenvektor daraus wird
 eigenValues = eigenValueMatrix(eigenValueMatrix ~= 0)';

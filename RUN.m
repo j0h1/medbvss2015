@@ -3,109 +3,107 @@ function [  ] = RUN ( ~ )
 %   Detailed explanation goes here
 
 %
-%Fragestellung 1: Kovarianzmatrix
+% Fragestellung 1: Kovarianzmatrix
 %
-% disp('--------------------')
-% disp('Fragestellung 1 - Kovarianzmatrix')
-% disp(' ')
-% 
-% daten = load('daten.mat');
-% 
-% fieldNames = fieldnames(daten);
-% 
-% for i = 1 : numel(fieldNames)
-%     data = daten.(fieldNames{i});
-%     disp(fieldNames{i});
-%     disp(ourCov(data));
-%     x = data(1, :);
-%     y = data(2, :);
-%     
-%     figure('name', fieldNames{i});
-%     plot(x, y, '*');
-%     axis equal;
-% end
+disp('--------------------')
+disp('Fragestellung 1 - Kovarianzmatrix')
+disp(' ')
+
+daten = load('daten.mat');
+fieldNames = fieldnames(daten);
+
+for i = 1 : numel(fieldNames)
+    data = daten.(fieldNames{i});
+    disp(fieldNames{i});
+    disp(ourCov(data));
+    x = data(1, :);
+    y = data(2, :);
+    
+    figure('name', fieldNames{i});
+    plot(x, y, '*');
+    axis equal;
+end
 
 %%
 % Fragestellung 2: PCA
 % 
-% disp(' ')
-% disp('--------------------')
-% disp('Fragestellung 2 - PCA')
-% disp(' ')
-% for i = 1 : numel(fieldNames)
-%     data = daten.(fieldNames{i});
-%     [ dataMean, eigenVectors, eigenValues ] = pca(data);   
-%     
-%     % data ist eine d x n Matrix -> transponieren
-%     plot2DPCA(data', dataMean, data', eigenVectors, eigenValues, 1, 1);
-% end
+disp(' ')
+disp('--------------------')
+disp('Fragestellung 2 - PCA')
+disp(' ')
+for i = 1 : numel(fieldNames)
+    data = daten.(fieldNames{i});
+    [ dataMean, eigenVectors, eigenValues ] = pca(data);   
+    
+    % data ist eine d x n Matrix -> transponieren
+    plot2DPCA(data', dataMean, data', eigenVectors, eigenValues, 1, 0);
+end
 
 %%
 % Fragestellung 3: Unterraum-Projektion
 % 
-% disp(' ')
-% disp('--------------------')
-% disp('Fragestellung 3a')
-% disp(' ')
-% 
-% daten = load('daten.mat');
-% data = daten.data3;
-% 
-% dim = size(data, 1);
-% n = size(data, 2);
-% 
-% [ dataMean, eigenVectors, eigenValues ] = pca(data);
-% 
-% % zenriere Daten
-% rowDataAdjust = data - repmat(dataMean, 1, size(data, 2));
-% 
-% % extrahiere Hauptkomponente
-% rowFeatureVector = eigenVectors(:, 1)';
-% 
-% % Ableitung der Daten nach Hauptvektor (Reduktion um 1 Dimension)
-% finalData = rowFeatureVector * rowDataAdjust;
-% 
-% % Rekonstruktion der Daten
-% recData = (rowFeatureVector' * finalData) + repmat(dataMean, 1, size(data, 2));
-% 
-% % Plotten der rekonstruierten Daten
-% plot2DPCA(data', dataMean, recData', eigenVectors, eigenValues, 0, 1);
-% 
-% % durchschnittlicher Fehler
-% avg_error = sum(abs(data' - recData')) / n;
-% disp('Durchschnittlicher Fehler zwischen Rekonstruktion und Originaldaten:');
-% disp('für X:');
-% disp(avg_error(1));
-% disp('für Y:');
-% disp(avg_error(2));
-% 
-% %%
-% % selbe Untersuchung mit Nebenvektor statt Hauptvektor
-% %
-% disp(' ')
-% disp('Fragestellung 3b')
-% disp(' ')
-% rowDataAdjust = data - repmat(dataMean, 1, size(data, 2));
-% 
-% % Extrahiere Nebenvektor
-% rowFeatureVector = eigenVectors(:, 2)';
-% 
-% % Ableitung der Daten nach Nebenvektor
-% finalData = rowFeatureVector * rowDataAdjust;
-% 
-% % Rekonstruktion der Daten
-% recData = (rowFeatureVector' * finalData) + repmat(dataMean, 1, size(data, 2));
-% 
-% % Plotten der rekonstruierten Daten
-% plot2DPCA(data', dataMean, recData', eigenVectors, eigenValues, 0, 1);
-% 
-% % durchschnittlicher Fehler
-% avg_error = sum(abs(data' - recData')) / n;
-% disp('Durchschnittlicher Fehler zwischen Rekonstruktion und Originaldaten:');
-% disp('für X:');
-% disp(avg_error(1));
-% disp('für Y:');
-% disp(avg_error(2));
+disp(' ')
+disp('--------------------')
+disp('Fragestellung 3a: Unterraum-Projektion auf Hauptvektor')
+disp(' ')
+
+data = daten.data3;
+
+dim = size(data, 1);
+n = size(data, 2);
+
+[ dataMean, eigenVectors, eigenValues ] = pca(data);
+
+% zenriere Daten
+centeredData = data - repmat(dataMean, 1, size(data, 2));
+
+% extrahiere Eigenvektor mit höchstem Eigenwert (= Hauptkomponente)
+rowFeatureVector = eigenVectors(:, 1)';
+
+% Ableitung der Daten nach Hauptvektor (Reduktion um 1 Dimension)
+projection = rowFeatureVector * centeredData;
+
+% Rekonstruktion der Daten
+recData = (rowFeatureVector' * projection) + repmat(dataMean, 1, size(data, 2));
+
+% Plotten der rekonstruierten Daten
+plot2DPCA(data', dataMean, recData', eigenVectors, eigenValues, 1, 1);
+
+% Berechnung des durchschnittlichen Fehlers
+avg_error = sum(abs(data' - recData')) / n;
+disp('Durchschnittlicher Fehler zwischen Rekonstruktion und Originaldaten:');
+disp('für X:');
+disp(avg_error(1));
+disp('für Y:');
+disp(avg_error(2));
+
+% selbe Untersuchung mit Nebenvektor statt Hauptvektor
+disp(' ')
+disp('Fragestellung 3b: Unterraum-Projektion auf Nebenvektor')
+disp(' ')
+
+% zenriere Daten
+centeredData = data - repmat(dataMean, 1, size(data, 2));
+
+% extrahiere Nebenvektor
+rowFeatureVector = eigenVectors(:, 2)';
+
+% Ableitung der Daten nach Nebenvektor
+projection = rowFeatureVector * centeredData;
+
+% Rekonstruktion der Daten
+recData = (rowFeatureVector' * projection) + repmat(dataMean, 1, size(data, 2));
+
+% Plotten der rekonstruierten Daten
+plot2DPCA(data', dataMean, recData', eigenVectors, eigenValues, 1, 1);
+
+% durchschnittlicher Fehler
+avg_error = sum(abs(data' - recData')) / n;
+disp('Durchschnittlicher Fehler zwischen Rekonstruktion und Originaldaten:');
+disp('für X:');
+disp(avg_error(1));
+disp('für Y:');
+disp(avg_error(2));
 
 %%
 % Fragestellung 4a: Untersuchung in 3D
@@ -126,52 +124,46 @@ n = size(data, 2);
 plot3DPCA(data', dataMean', eigenVectors, eigenValues, 1, 1);
 
 %%
-%Fragestellung 4b: Untersuchung in 3D
+% Fragestellung 4b: Untersuchung in 3D
 %
-rowDataAdjust = data - repmat(dataMean, 1, size(data, 2));
-rowFeatureVector = eigenVectors(:, 1:2)';
-finalData = rowFeatureVector * rowDataAdjust;
+
+centeredData = data - repmat(dataMean, 1, size(data, 2));
+
+projection = eigenVectors(:, 1:2)' * centeredData;
 
 % Rekonstruktion der Daten
-recData = (rowFeatureVector' * finalData) + repmat(dataMean, 1, size(data, 2));
+recData = (eigenVectors(:, 1:2) * projection) + repmat(dataMean, 1, size(data, 2));
 
-plot3DPCA(recData', dataMean', eigenVectors, eigenValues, 1, 1);
-% Welche Information wurde verloren?
-% eigenValues = 5.0861   28.6518   121.1251
-% es ist relativ wenig Information verloren gegangen, da nur der
-% Eigenvektor mit dem geringsten Eigenwert entfernt wurde
-% Der entfernte Eigenvektor bezieht sich auf die X-Koordinaten
+plot3DPCA(recData', dataMean', eigenVectors, eigenValues, 0, 1);
 
-
-% %%
-% % Fragestellung 5a: Shape Modell
-% % 
-disp(' ');
-disp('--------------------')
-disp('Fragestellung 5a - Shape Modell');
-disp(' ');
+%%
+% Fragestellung 5a: Shape Modell
+% 
 
 daten = load('shapes.mat');
 aligned = daten.aligned;
 
+% extrahiere Dimensionen von Datensatz
+[n dim numberOfShapes] = size(aligned);
+
 % Mean-Modell generieren
 meanModel = mean(aligned, 3);
 
-% converting data to 256x14 coordVector (page 29 - RAASM)
-for i = 1 : size(aligned, 2) - 1
+% Konvertiere Daten auf 14 Coordination-Vectors (256x14) (see page 29 - RAASM)
+for i = 1 : dim - 1
     coordVector = cat(1, aligned(:, i, :), aligned(:, i + 1, :));
-    coordVector = squeeze(coordVector);  %removes singleton dimensions
+    coordVector = squeeze(coordVector);  % entferne singleton dimension
 end
 
-size(coordVector)
-
+% berechne PCA für Datensatz
 [ dataMean, eigenVectors, eigenValues ] = pca(coordVector);
 
 %%
 % Fragestellung 5b: Shape Modell
-% 
+%
 
-shapes = zeros(128, 2, 7);
+shapes = zeros(n, dim, 7);
+
 for i = 1 : 7
     % Parametervektor b mit Länge der Eigenvektoren initialisieren
     b = zeros(size(eigenVectors(:, 1)));
@@ -180,13 +172,19 @@ for i = 1 : 7
     shapes(:, :, i) = generateShape(meanModel, eigenVectors(:, 1), b);  
 end
 
+% plotte generierte Shapes (blau) und Mean-Shape (rot)
 plotShape(shapes, meanModel);
 
 %%
 % Fragestellung 5c: Shape Modell
 % 
 
-% berechne Parametervektor lt. Angabe
+disp(' ');
+disp('--------------------')
+disp('Fragestellung 5c - Shape Modell');
+disp(' ');
+
+% berechne randomisierten Parametervektor
 stdDeviations = sqrt(eigenValues);
 b = randn(1, size(eigenVectors(: , 1), 1)) .* stdDeviations; % Zeilenvektor
 
@@ -253,7 +251,7 @@ for i = 1 : size(normalizedEigenValues, 2)
     
 end
 
-clear;
-
+% plotte zusätzlich Mean-Shape
+plot(meanModel(:, 1), meanModel(:, 2), 'Color', [0, 0, 0]);
 
 end
