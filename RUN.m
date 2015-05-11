@@ -2,8 +2,8 @@ function [  ] = RUN ( ~ )
 %RUN Summary of this function goes here
 %   Detailed explanation goes here
 
-%%
-% Fragestellung 1: Kovarianzmatrix
+%
+%Fragestellung 1: Kovarianzmatrix
 %
 % disp('--------------------')
 % disp('Fragestellung 1 - Kovarianzmatrix')
@@ -20,7 +20,7 @@ function [  ] = RUN ( ~ )
 %     x = data(1, :);
 %     y = data(2, :);
 %     
-%     figure('name', ['Fragestellung 1: ', fieldNames{i}], 'NumberTitle', 'off');
+%     figure('name', fieldNames{i});
 %     plot(x, y, '*');
 %     axis equal;
 % end
@@ -143,9 +143,9 @@ plot3DPCA(recData', dataMean', eigenVectors, eigenValues, 1, 1);
 % Der entfernte Eigenvektor bezieht sich auf die X-Koordinaten
 
 
-%%
-% Fragestellung 5a: Shape Modell
-% 
+% %%
+% % Fragestellung 5a: Shape Modell
+% % 
 disp(' ');
 disp('--------------------')
 disp('Fragestellung 5a - Shape Modell');
