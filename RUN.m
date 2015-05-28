@@ -10,17 +10,19 @@ disp('Fragestellung 1 - Kovarianzmatrix')
 disp(' ')
 
 daten = load('daten.mat');
+
+% extrahiere Namen der Datensätze
 fieldNames = fieldnames(daten);
 
+% berechne Kovarianzmatrix für jeden Datensatz
 for i = 1 : numel(fieldNames)
     data = daten.(fieldNames{i});
     disp(fieldNames{i});
     disp(ourCov(data));
-    x = data(1, :);
-    y = data(2, :);
     
+    % plotte Datensätze
     figure('name', fieldNames{i});
-    plot(x, y, '*');
+    plot(data(1, :), data(2, :), '*');
     axis equal;
 end
 
@@ -31,9 +33,17 @@ disp(' ')
 disp('--------------------')
 disp('Fragestellung 2 - PCA')
 disp(' ')
+
+% berechnet PCA für alle shapes
 for i = 1 : numel(fieldNames)
     data = daten.(fieldNames{i});
-    [ dataMean, eigenVectors, eigenValues ] = pca(data);   
+    [ dataMean, eigenVectors, eigenValues ] = pca(data);
+    
+    disp([fieldNames{i}, ':']);
+    disp('Eigenvektoren (in Spalten, nach Eigenwerten sortiert):');
+    disp(eigenVectors);
+    disp('Eigenwerte:');
+    disp(eigenValues);
     
     % data ist eine d x n Matrix -> transponieren
     plot2DPCA(data', dataMean, data', eigenVectors, eigenValues, 1, 0);
@@ -52,15 +62,16 @@ data = daten.data3;
 dim = size(data, 1);
 n = size(data, 2);
 
+% berechne PCA für Shape-Daten aus data3
 [ dataMean, eigenVectors, eigenValues ] = pca(data);
 
-% zenriere Daten
+% zenriere Daten als Vorbereitung für Projektion
 centeredData = data - repmat(dataMean, 1, size(data, 2));
 
 % extrahiere Eigenvektor mit höchstem Eigenwert (= Hauptkomponente)
 rowFeatureVector = eigenVectors(:, 1)';
 
-% Ableitung der Daten nach Hauptvektor (Reduktion um 1 Dimension)
+% Ableitung der Daten nach Hauptvektor (=Reduktion um 1 Dimension)
 projection = rowFeatureVector * centeredData;
 
 % Rekonstruktion der Daten
@@ -121,25 +132,41 @@ n = size(data, 2);
 
 [ dataMean, eigenVectors, eigenValues ] = pca(data);
 
+disp('Eigenvektoren:');
+disp(eigenVectors);
+disp('Eigenwerte:');
+disp(eigenValues);
+
 plot3DPCA(data', dataMean', eigenVectors, eigenValues, 1, 1);
 
 %%
 % Fragestellung 4b: Untersuchung in 3D
 %
+disp(' ');
+disp('Fragestellung 4b - Untersuchung in 3D');
+disp(' ');
 
 centeredData = data - repmat(dataMean, 1, size(data, 2));
 
+disp('Dimension der Daten vor Projektion auf die beiden ersten Eigenvektoren:');
+disp(size(centeredData));
+
 projection = eigenVectors(:, 1:2)' * centeredData;
+
+disp('Dimension der Daten nach der Projektion:');
+disp(size(projection));
 
 % Rekonstruktion der Daten
 recData = (eigenVectors(:, 1:2) * projection) + repmat(dataMean, 1, size(data, 2));
+
+disp('Dimension der rekonstruierten Daten:');
+disp(size(recData));
 
 plot3DPCA(recData', dataMean', eigenVectors, eigenValues, 0, 1);
 
 %%
 % Fragestellung 5a: Shape Modell
 % 
-
 daten = load('shapes.mat');
 aligned = daten.aligned;
 
@@ -161,7 +188,6 @@ end
 %%
 % Fragestellung 5b: Shape Modell
 %
-
 shapes = zeros(n, dim, 7);
 
 for i = 1 : 7
@@ -178,7 +204,6 @@ plotShape(shapes, meanModel);
 %%
 % Fragestellung 5c: Shape Modell
 % 
-
 disp(' ');
 disp('--------------------')
 disp('Fragestellung 5c - Shape Modell');
@@ -208,45 +233,45 @@ for i = 1 : size(normalizedEigenValues, 2)
         % Gesamtvarianz
         if (found80 == false)
             found80 = true;
-            disp(['reached 80% at position ', num2str(i)]);
+            disp(['80% der Gesamtvarianz nach dem ', num2str(i), '. Eigenwert']);
             
             b_(1:i) = b(1:i);
             shape = generateShape(meanModel, eigenVectors(:, 1), b_);
-            plot(shape(:, 1), shape(:, 2), 'Color', [1, 1, 0]); % yellow
+            plot(shape(:, 1), shape(:, 2), 'Color', [1, 1, 0]); % gelb
             hold on;
         end
     end
     if (currentSumOfVariances >= 0.9)
         if (found90 == false)
             found90 = true;
-            disp(['reached 90% at position ', num2str(i)]);
+            disp(['90% der Gesamtvarianz nach dem ', num2str(i), '. Eigenwert']);
             
             b_(1:i) = b(1:i);
             shape = generateShape(meanModel, eigenVectors(:, 1), b_);
-            plot(shape(:, 1), shape(:, 2), 'Color', [1, 0, 0]); % red
+            plot(shape(:, 1), shape(:, 2), 'Color', [1, 0, 0]); % rot
             hold on;
         end
     end
     if (currentSumOfVariances >= 0.95)
         if (found95 == false)
             found95 = true;
-            disp(['reached 95% at position ', num2str(i)]);
+            disp(['95% der Gesamtvarianz nach dem ', num2str(i), '. Eigenwert']);
             
             b_(1:i) = b(1:i);
             shape = generateShape(meanModel, eigenVectors(:, 1), b_);
-            plot(shape(:, 1), shape(:, 2), 'Color', [0, 1, 0]); % green
+            plot(shape(:, 1), shape(:, 2), 'Color', [0, 1, 0]); % grün
             hold on;
         end
     end
     if (currentSumOfVariances >= 1)
-        disp(['reached 100% at position ', num2str(i)]);
+        disp(['100% der Gesamtvarianz nach dem ', num2str(i), '. Eigenwert']);
 
         b_(1:i) = b(1:i);
         shape = generateShape(meanModel, eigenVectors(:, 1), b_);
-        plot(shape(:, 1), shape(:, 2), 'Color', [0, 0, 1]); % blue
+        plot(shape(:, 1), shape(:, 2), 'Color', [0, 0, 1]); % blau
         hold on;
 
-        break;  % break out of loop after finding 100%
+        break;
     end
     
 end

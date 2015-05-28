@@ -2,7 +2,7 @@ function [ dataMean, eigenVectors, eigenValues ] = pca( D )
 %PCA Summary of this function goes here
 %   Detailed explanation goes here
 
-% D needs to be dxn
+% eingehende Daten D müssen dxn sein
 [dim, n] = size(D);
 
 % Mittelwert-Vektor bestimmt das Zentrum der Daten
