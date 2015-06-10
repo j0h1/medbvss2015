@@ -16,17 +16,19 @@ haarlikeImage = computeHaarLike(image);
 % compute HaarLike features for gradient magnitude
 haarlikeGradientMag = computeHaarLike(Gmag);
 
+features = zeros(46, width * height);
+
 pixelCounter = 0;
-for i = 1 : height    
-    for j = 1 : width
+for i = 1 : width    
+    for j = 1 : height
         pixelCounter = pixelCounter + 1;
         
         % storing gray scale image values in feature vector
-        features(1, pixelCounter) = image(i, j);
+        features(1, pixelCounter) = image(j, i);
         
         % storing gradients in x- and y-direction
-        features(2, pixelCounter) = Gx(i, j);
-        features(3, pixelCounter) = Gy(i, j);
+        features(2, pixelCounter) = Gx(j, i);
+        features(3, pixelCounter) = Gy(j, i);
         
         % storing all 20 haarlike features for image as single features
         features(4:23, pixelCounter) = haarlikeImage(1:20, pixelCounter);
@@ -35,11 +37,11 @@ for i = 1 : height
         features(24:43, pixelCounter) = haarlikeGradientMag(1:20, pixelCounter);
         
         % storing gradient magnitude
-        features(44, pixelCounter) = Gmag(i, j);
+        features(44, pixelCounter) = Gmag(j, i);
         
         % storing x- and y-coordinates
-        features(45, pixelCounter) = j;
-        features(46, pixelCounter) = i;
+        features(45, pixelCounter) = i;
+        features(46, pixelCounter) = j;
     end    
 end
 

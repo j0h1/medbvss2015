@@ -20,6 +20,8 @@ labels = cell(contourPixelCount * 2, 1);
 firstNewFeatureIndex = 1;
 
 for i = 1 : size(images, 2)
+    disp(['Computing features for image #', num2str(i)]);
+    
     currentImage = images{i};
     currentMask = masks{i};
     
@@ -29,36 +31,24 @@ for i = 1 : size(images, 2)
     % calculate number of foreground pixels in mask (contour)
     contourPixelCount = sum(sum(currentMask ~= 0));
     
-    % flatten mask to vector
-    flattenedMask = currentMask(:);
-    
     % at the indices where the mask vector ~= 0 (contour), extract
     % features, add them to the feature set and set the labels accordingly
-    features(:, firstNewFeatureIndex : firstNewFeatureIndex + contourPixelCount - 1) = imageFeatures(:, flattenedMask ~= 0);
+    features(:, firstNewFeatureIndex : firstNewFeatureIndex + contourPixelCount - 1) = imageFeatures(:, find(currentMask));
     for j = firstNewFeatureIndex : firstNewFeatureIndex + contourPixelCount - 1
         labels{j} = 'Contour';
     end
+    
 %     labels{firstNewFeatureIndex : firstNewFeatureIndex + contourPixelCount - 1} = 'Contour';
     % set the start index for further features to the end of both sets
     firstNewFeatureIndex = firstNewFeatureIndex + contourPixelCount;
+
+    % create a vector containing all indices of the features and exclude
+    % the indices of contour samples
+    randIdx = 1 : size(imageFeatures, 2);
+    randIdx = setdiff(randIdx, find(currentMask));
     
-    % now we have to randomly choose the same amount of background samples
-    % as contour samples (contourPixelCount); to achieve this, we generate
-    % indices for all features, exclude the indices of the contour features
-    % and chose from a randomly permutated set of indices
-    randIdx = randperm(size(imageFeatures, 2));
-    % since flattenedMask is not binary (has values of either 0 or 10), we
-    % make it binary, to be able to use find on it, which retrieves indices
-    % of non-zero elements; to filter out the contour indices, we invert
-    % the binary mask and use find to get all indices of contour pixels (to
-    % filter them out)
-    binFlattenedMask = flattenedMask;
-    binFlattenedMask(binFlattenedMask > 0) = 1;
-    % exclude indices that were used for contour features from selection
-    randIdx = setdiff(randIdx, find(~binFlattenedMask));
-    
-    % select exactly as much background pixel indices as contour pixels
-    bgFeatureIdx = randIdx(1:contourPixelCount);
+    % randomly select exactly contourPixelCount background pixel indices
+    bgFeatureIdx = randsample(randIdx, contourPixelCount);
     features(:, firstNewFeatureIndex : firstNewFeatureIndex + contourPixelCount - 1) = imageFeatures(:, bgFeatureIdx);
     for j = firstNewFeatureIndex : firstNewFeatureIndex + contourPixelCount - 1
         labels{j} = 'Background';
@@ -69,6 +59,7 @@ for i = 1 : size(images, 2)
     
 end
 
+disp('training random forest with extracted features');
 % creating random forest for extracted features and labels
 rf = TreeBagger(32, features', labels', 'OOBVarImp', 'on');
 

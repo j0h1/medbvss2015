@@ -50,17 +50,15 @@ function [  ] = RUN ( ~ )
 % 
 % % reconstructing image data with computed features
 % pixelCount = 0;
-% for i = 1 : height
-%     for j = 1 : width
+% for i = 1 : width
+%     for j = 1 : height
 %         pixelCount = pixelCount + 1;
-%         image_(i, j) = features(1, pixelCount);
-%         imageGx(i, j) = features(2, pixelCount);
-%         imageGy(i, j) = features(3, pixelCount);
-%         imageHaarlike1(i, j) = features(4, pixelCount);
-%         imageHaarlike2(i, j) = features(24, pixelCount);
-%         imageGradientMag(i, j) = features(44, pixelCount);
-%         imageXCoords(i, j) = features(45, pixelCount);
-%         imageYCoords(i, j) = features(46, pixelCount);
+%         image_(j, i) = features(1, pixelCount);
+%         imageGx(j, i) = features(2, pixelCount);
+%         imageGy(j, i) = features(3, pixelCount);
+%         imageHaarlike1(j, i) = features(4, pixelCount);
+%         imageHaarlike2(j, i) = features(24, pixelCount);
+%         imageGradientMag(j, i) = features(44, pixelCount);
 %     end
 % end
 % 
@@ -71,8 +69,6 @@ function [  ] = RUN ( ~ )
 % figure('name', 'Feature: HaarLike features for image', 'NumberTitle', 'off'); imagesc(imageHaarlike1); axis('equal');
 % figure('name', 'Feature: HaarLike features for gradient magnitude', 'NumberTitle', 'off'); imagesc(imageHaarlike2); axis('equal');
 % figure('name', 'Feature: Gradient magnitude', 'NumberTitle', 'off'); imagesc(imageGradientMag); axis('equal');
-% figure('name', 'Feature: X-coordinates', 'NumberTitle', 'off'); imagesc(imageXCoords); axis('equal');
-% figure('name', 'Feature: Y-coordinates', 'NumberTitle', 'off'); imagesc(imageYCoords); axis('equal');
 
 %%
 % Fragestellung 3: Klassifikation & Feature-Selection
@@ -83,9 +79,12 @@ function [  ] = RUN ( ~ )
 % 
 % % train a random forest with training dataset
 % randomForest = cache(@train, trainImages, trainMasks);
+% % randomForest = train(trainImages, trainMasks);
 % 
 % figure('name', 'Out-of-bag classification error');
 % plot(oobError(randomForest));
+% xlabel 'Number of grown trees';
+% ylabel 'Out-of-bag classification error';
 % 
 % figure('name', 'Feature significance');
 % bar(randomForest.OOBPermutedVarDeltaError);
@@ -96,8 +95,35 @@ function [  ] = RUN ( ~ )
 handdata = load('handdata.mat');
 images = handdata.images;
 masks = handdata.masks;
+aligned = handdata.aligned;
+landmarks = handdata.landmarks{1};
 
 rf = cache(@train, images(1:30), masks(1:30));
+
+testImage = images{31};
+predictionLabels = predict_(rf, testImage);
+
+% reconstruction of binary image by predicted labels
+binLabels = zeros(size(testImage));
+binLabels(strcmp(predictionLabels, 'Contour')) = 1;
+
+% calculating PCA for aligned shapes in handdata
+[n, dim, numberOfShapes] = size(aligned);
+
+% generate mean shape
+meanShape = mean(aligned, 3);
+
+for i = 1 : dim - 1
+    coordVector = cat(1, aligned(:, i, :), aligned(:, i + 1, :));
+    coordVector = squeeze(coordVector);
+end
+
+[ dataMean, eigenVectors, eigenValues ] = pca(coordVector);
+
+b = zeros(size(eigenVectors(:, 1)));
+b(1) = sqrt(eigenValues(1));
+
+optimizeShape(eigenVectors(:, 1), b, meanShape, binLabels, testImage, landmarks);
 
 
 end
