@@ -3,8 +3,6 @@ function [  ] = plotShape( shapes, meanModel )
 %   Detailed explanation goes here
 
 % plotte alle Shapes in blau
-figure;
-
 for i = 1 : size(shapes, 3)
     plot(shapes(:, 1, i), shapes(:, 2, i), 'Color', 'b');
     hold on;

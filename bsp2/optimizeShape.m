@@ -1,80 +1,130 @@
-function optimizeShape ( eigenVector, b, meanModel, predictedLabels, image, landmarks )
+function bestShape = optimizeShape ( eigenVector, b, meanModel, predictedLabels, minimums, maximums )
 %OPTIMIZESHAPE Summary of this function goes here
 %   Detailed explanation goes here
 
-% setting boundaries for optimization
-minimums = [ -0.2 * pi; 0.9; min(landmarks(1, :)); min(landmarks(2, :)) ];
-maximums = [ 0.2 * pi; 1.1; max(landmarks(1, :)); max(landmarks(2, :)) ];
+costFunctionCallCount = 0;
     
 costFunction = makeCostFunction;
 
+% calculate parameters (rotation, scale, x- and y- translation) for best
+% fitting shape
 best = optimize(costFunction, minimums, maximums);
 
-best
+% generate best shape
+bestShape = generateShape(eigenVector, b, meanModel, best(1), best(2), best(3), best(4));
+
+disp(['Anzahl der Aufrufe der Kostenfunktion: ', num2str(costFunctionCallCount)]);
 
 function f = makeCostFunction
     f = @costFunction;    
     function c = costFunction(params)
+        costFunctionCallCount = costFunctionCallCount + 1;
+        
         generatedShape = generateShape(eigenVector, b, meanModel, params(1), params(2), params(3), params(4));
     
         % extract coordinates of prediction where contour was found
         [y, x] = find(predictedLabels);
         
-        figure;
-        imshow(image);
-        hold on;
-        plot(generatedShape(:, 1), generatedShape(:, 2));
-        hold on;
-
-        % TODO find a better way to find a cost for a shape...
+        % hit-or-miss classification
+%         binLabels = zeros(size(predictedLabels));
+%         for i = 1 : size(generatedShape, 1)
+%             x = round(generatedShape(i, 1));
+%             y = round(generatedShape(i, 2));
+%             if (x > 0 && y > 0 && x < size(binLabels, 2) && y < size(binLabels, 1))
+%                 binLabels(y, x) = 1;
+%             end
+%         end
+%         
+%         overlap = predictedLabels - binLabels;
+%         
+%         % where pixels are -1, no matches were found
+%         misses = sum(sum(overlap == -1));
+%         
+%         c = misses / size(generatedShape, 1);
         
         % calculate the minimum euclidean distance for every sample as cost
-        c = 0;
+%         c = 0;
+%         for i = 1 : size(generatedShape, 1)
+%             x_shape = generatedShape(i, 1);
+%             y_shape = generatedShape(i, 2);
+%             
+%             minDist = intmax('int16');
+%             for j = 1 : size(x)
+%                 diff_x = x(j) - x_shape;
+%                 diff_y = y(j) - y_shape;
+%                 
+%                 dist = sqrt(diff_x * diff_x + diff_y * diff_y);
+%                 
+%                 if (dist < minDist)
+%                     minDist = dist;
+%                 end
+%             end
+%             c = c + minDist;
+%         end
+
+        % für jeden Punkt im Shape, untersuche Nachbarschaft in prediction
+        sumNeighborhoodHits = 0;
         for i = 1 : size(generatedShape, 1)
-            x_shape = generatedShape(i, 1);
-            y_shape = generatedShape(i, 2);
-            
-            minDist = intmax('int16');
-            for j = 1 : size(x)
-                diff_x = x(j) - x_shape;
-                diff_y = y(j) - y_shape;
+            xShape = round(generatedShape(i, 1));
+            yShape = round(generatedShape(i, 2));
+            % border checking
+            if (xShape - 2 > 0 && yShape - 2 > 0 && xShape + 2 <= size(predictedLabels, 2) && yShape + 2 <= size(predictedLabels, 1))
+                % check neighborhood in prediction at points in shape
+                sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 1, xShape - 1);
+                sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 1, xShape);
+                sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 1, xShape + 1);
+                sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape, xShape - 1);
+                sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape, xShape);
+                sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape, xShape + 1);
+                sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 1, xShape - 1);
+                sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 1, xShape);
+                sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 1, xShape + 1);
                 
-                dist = sqrt(diff_x * diff_x + diff_y * diff_y);
-                
-                if (dist < minDist)
-                    minDist = dist;
-                end
+                % 25er Nachbarschaft
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 2, xShape - 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 2, xShape - 1);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 2, xShape);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 2, xShape + 1);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 2, xShape + 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 1, xShape + 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape, xShape + 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 1, xShape + 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 2, xShape + 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 2, xShape + 1);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 2, xShape);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 2, xShape - 1);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 2, xShape - 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 1, xShape - 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape, xShape - 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 1, xShape - 2);
             end
-            c = c + minDist;
         end
-        disp(['mindistance=', num2str(c)]);
+        % Manhattan Nachbarschaft
+%         for i = 1 : size(generatedShape, 1)
+%             xShape = round(generatedShape(i, 1));
+%             yShape = round(generatedShape(i, 2));
+%             % border checking
+%             if (xShape - 2 > 0 && yShape - 2 > 0 && xShape + 2 <= size(predictedLabels, 2) && yShape + 2 <= size(predictedLabels, 1))
+%                 % check neighborhood in prediction at points in shape
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 1, xShape - 1);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 1, xShape);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 2, xShape);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape - 1, xShape + 1);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape, xShape - 1);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape, xShape - 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape, xShape);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape, xShape + 1);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape, xShape + 2);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 1, xShape - 1);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 1, xShape);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 2, xShape);
+%                 sumNeighborhoodHits = sumNeighborhoodHits + predictedLabels(yShape + 1, xShape + 1);
+%             end
+%         end
+        
+        c = 1 / sumNeighborhoodHits;
     end
 end
-
-% function h = drawPopulation(population, bestInd)    
-%     imshow(image);
-    
-%     for i = 1 : size(population, 2)
-%         params = population(:, i);
-%         shape = generateShape(eigenVector, b, meanModel, params(1), params(2), params(3), params(4));
-% 
-%         hold on;
-%             
-%         if (i == bestInd)
-%             bestShape = shape;
-%         else 
-%             h = plot(shape(:,1), shape(:,2));
-%             h.Color = 'blue';
-%             h.LineStyle = '--';
-%         end
-%     end
-%     params = population(:, bestInd);
-%     plot(population(1, bestInd), population(2, bestInd),'g+');
-%     
-%     h = plot(bestShape(:, 1), bestShape(:, 2));
-%     h.Color = 'green';
-%     h.LineWidth = 2;
-% end
 
 end
 

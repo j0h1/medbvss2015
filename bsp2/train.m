@@ -38,7 +38,6 @@ for i = 1 : size(images, 2)
         labels{j} = 'Contour';
     end
     
-%     labels{firstNewFeatureIndex : firstNewFeatureIndex + contourPixelCount - 1} = 'Contour';
     % set the start index for further features to the end of both sets
     firstNewFeatureIndex = firstNewFeatureIndex + contourPixelCount;
 
@@ -53,13 +52,12 @@ for i = 1 : size(images, 2)
     for j = firstNewFeatureIndex : firstNewFeatureIndex + contourPixelCount - 1
         labels{j} = 'Background';
     end
-%     labels{firstNewFeatureIndex : firstNewFeatureIndex + contourPixelCount - 1} = {'Background'};
 
-    firstNewFeatureIndex = firstNewFeatureIndex + contourPixelCount;
-    
+    firstNewFeatureIndex = firstNewFeatureIndex + contourPixelCount;    
 end
 
-disp('training random forest with extracted features');
+disp(' ');
+disp('Training random forest with extracted features..');
 % creating random forest for extracted features and labels
 rf = TreeBagger(32, features', labels', 'OOBVarImp', 'on');
 
