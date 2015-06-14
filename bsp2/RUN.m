@@ -190,49 +190,66 @@ for i = 1 : 30
     end
 end
 
-minimums = [ - pi * 0.3; 0.8; minX; minY ];
-maximums = [ pi * 0.3; 1.2; maxX; maxY ];
+minimums = [ - pi * 0.2; 0.8; minX; minY ];
+maximums = [ pi * 0.2; 1.2; maxX; maxY ];
 
 shapeDiffs = zeros(64, 20);
 
-% calculate best fitting shape for test dataset
-for i = 31 : 50
-    % extract current image from data set
-    currentImage = images{i};
-    currentLandmarks = landmarks{i}';
-    
-    % get prediction for current image from classificator (results in
-    % labels that show class membership)
-    predictionLabels = predict_(rf, currentImage);
-    
-    % construct binary image from predicted labels
-    binLabels = zeros(size(currentImage));
-    binLabels(strcmp(predictionLabels, 'Contour')) = 1;
-    
-    % optimize shape
-    bestShape = optimizeShape(eigenVectors(:, 1), b, meanShape, binLabels, minimums, maximums);
-    
-    % plot best shape
-    figure('name', ['Segmentation for image ', num2str(i)]);
-    subplot(1, 2, 1)
-    imshow(currentImage);
-    hold on;
-    plot(bestShape(:, 1), bestShape(:, 2));
-    
-    subplot(1, 2, 2)
-    imshow(binLabels);
-    hold on;
-    plot(bestShape(:, 1), bestShape(:, 2));
-    
-    % calculate average error for each data point
-    shapeDiffs(:, i - 30) = sum(abs(bestShape - currentLandmarks), 2) / 2;
+% run classification of test images n times (for error calculation over n
+% test runs)
+n = 1;
+for k = 1 : n
+    disp(['Starting test run ', num2str(k), '/', num2str(n), '...']);
+    % calculate best fitting shape for test dataset
+    for i = 31 : 50
+        % extract current image from data set
+        currentImage = images{i};
+        currentLandmarks = landmarks{i}';
+
+        % get prediction for current image from classificator (results in
+        % labels that show class membership)
+        [predictionLabels, predictionProbabilities] = predict_(rf, currentImage);
+
+        % extract countour class probabilities from prediction
+        classProbsContour = predictionProbabilities(:, 2);    
+        classProbsContour = reshape(classProbsContour, size(currentImage));
+
+        % construct binary image from predicted labels
+        binLabels = zeros(size(currentImage));
+        binLabels(strcmp(predictionLabels, 'Contour')) = 1;
+
+        prediction = binLabels .* classProbsContour;
+        
+%         % show predictor
+%         figure; imshow(classProbsContour);
+%         figure; imshow(binLabels);
+%         figure; imshow(prediction);
+
+        % optimize shape
+        bestShape = optimizeShape(eigenVectors(:, 1), b, meanShape, prediction, minimums, maximums);
+
+        % plot best shape
+        figure('name', ['Segmentation for image ', num2str(i)]);
+        subplot(1, 2, 1)
+        imshow(currentImage);
+        hold on;
+        plot(bestShape(:, 1), bestShape(:, 2));
+
+        subplot(1, 2, 2)
+        imshow(prediction);
+        hold on;
+        plot(bestShape(:, 1), bestShape(:, 2));
+
+        % calculate average error for each data point
+        shapeDiffs(:, i - 30) = shapeDiffs(:, i - 30) + sum(abs(bestShape - currentLandmarks), 2) / 2;
+    end
 end
 
+shapeDiffs = shapeDiffs / n;
+
 % visualize error rate
-figure('name', 'Average error of single data points');
+figure('name', ['Average error of single data points in ', num2str(n), ' runs']);
 boxplot(shapeDiffs, 'notch', 'on');
 grid on;
-
-
 
 end
